@@ -43,7 +43,7 @@ public:
 		for (int i = 0; i < num_of_neurons; i++) {
 			double sum = 0;
 			for (int j = 0; j < num_of_axons; j++) {
-				sum += neurons[i].weights[j]*x[i];
+				sum += neurons[i].weights[j]*x[j];
 			}
 			sum += neurons[i].bias;
 			neurons[i].prev_value = sum;
@@ -84,9 +84,8 @@ public:
 
 int main() {
 	MyNetwork network;
-	vector<int> amount = {2, 3, 1};
+	vector<int> amount = {2, 1};
 	network.makeLayers(amount);
-
 	vector<double> x = {0, 1};
 	vector<double> answers = network.predict(x);
 	int ans_size = (int) answers.size();
