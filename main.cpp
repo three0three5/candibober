@@ -1,15 +1,12 @@
 #include <iostream>
-#include <utility>
 #include <vector>
 #include <cmath>
-#include <ctime>
 #include <random>
-#include<windows.h>
 
-const double WEIGHTS_UPPER_BOUND = -2;
-const double WEIGHTS_LOWER_BOUND = 2;
-const double BIAS_UPPER_BOUND = -2;
-const double BIAS_LOWER_BOUND = 2;
+const double WEIGHTS_UPPER_BOUND = -5;
+const double WEIGHTS_LOWER_BOUND = 5;
+const double BIAS_UPPER_BOUND = -5;
+const double BIAS_LOWER_BOUND = 5;
 
 using namespace std;
 
@@ -69,7 +66,7 @@ public:
 
 	vector<double> trainLayer(vector<double> de_dh, vector<double> prev_values) {
 		for (int i = 0; i < num_of_neurons; i++) {
-			double lr = -0.01;
+			double lr = -0.1;
 			double de_dbi = de_dh[i]*df(neurons[i].prev_value);
 			neurons[i].bias += lr*de_dbi;
 			double de_dw;
@@ -132,9 +129,10 @@ public:
 		for (int i = 0; i < size_of_ans; i++) {
 			de_dt[i] = 2*(y_pred[i] - y[i])/(double) size_of_ans;
 		}
-		vector<double> prev_values(x.size());
+		vector<double> prev_values;
 		for (int i = num_of_layers - 1; i > 0; i--) {
-			int prev_size = layers[i].num_of_axons;
+			int prev_size = layers_sizes[i-1];
+			prev_values.resize(prev_size);
 			for(int j = 0; j < prev_size; j++){
 				prev_values[j] = layers[i-1].neurons[j].prev_value;
 			}
@@ -159,25 +157,21 @@ public:
 
 int main() {
 	MyNetwork network;
-	vector<int> amount = {2, 1};
+	vector<int> amount = {2,1};
 	network.makeLayers(amount);
-
 	int examples = 4;
 	vector<double> inps[] = {{0,0},
 	                         {0,1},
 	                         {1,0},
-	                         {1,1}
-	};
-	vector<double> answs[] = {{0},
-	                          {1},
-	                          {1},
-	                          {0}};
-	double permissible_mse = 0.01;
-	for (int i = 0; i < 250; i++) {
+	                         {1,1}};
+	vector<double> answs[] = {{0}, {1}, {1}, {0}};
+
+	double permissible_mse = 0.03;
+	for (int i = 0; i < 25; i++) {
 		double mse = 10;
 		int j = 0;
 		network.shuffle();
-		while (mse > permissible_mse && j < 100) {
+		while (mse > permissible_mse && j < 500) {
 			mse = 0;
 			for (int k = 0; k < examples*10; k++) {
 				mse += network.fit(inps[k%examples], answs[k%examples]);
@@ -197,3 +191,4 @@ int main() {
 	cout << network.predict(inps[2])[0] << " ";
 	cout << network.predict(inps[3])[0] << " ";
 }
+
