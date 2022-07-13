@@ -67,14 +67,14 @@ public:
 		return y;
 	}
 
-	vector<double> trainLayer(vector<double> de_dh) {
+	vector<double> trainLayer(vector<double> de_dh, vector<double> prev_values) {
 		for (int i = 0; i < num_of_neurons; i++) {
 			double lr = -0.01;
 			double de_dbi = de_dh[i]*df(neurons[i].prev_value);
 			neurons[i].bias += lr*de_dbi;
 			double de_dw;
 			for (int j = 0; j < num_of_axons; j++) {
-				de_dw = de_dh[i]*df(neurons[i].prev_value)*neurons[i].weights[j];
+				de_dw = de_dh[i]*df(neurons[i].prev_value)*actFunc(prev_values[j]);
 				neurons[i].weights[j] += lr*de_dw;
 			}
 		}
@@ -119,9 +119,9 @@ public:
 		return y;
 	}
 
-	double fit(vector<double> x, vector<double> y) {
+	double fit(const vector<double>& x, vector<double> y) {
 		int size_of_ans = (int) y.size();
-		vector<double> y_pred = predict(move(x));
+		vector<double> y_pred = predict(x);
 		double mse = 0;
 		for (int i = 0; i < size_of_ans; i++) {
 			mse += (y_pred[i] - y[i])*(y_pred[i] - y[i]);
@@ -132,9 +132,15 @@ public:
 		for (int i = 0; i < size_of_ans; i++) {
 			de_dt[i] = 2*(y_pred[i] - y[i])/(double) size_of_ans;
 		}
-		for (int i = num_of_layers - 1; i >= 0; i--) {
-			de_dt = layers[i].trainLayer(de_dt);
+		vector<double> prev_values(x.size());
+		for (int i = num_of_layers - 1; i > 0; i--) {
+			int prev_size = layers[i].num_of_axons;
+			for(int j = 0; j < prev_size; j++){
+				prev_values[j] = layers[i-1].neurons[j].prev_value;
+			}
+			de_dt = layers[i].trainLayer(de_dt, prev_values);
 		}
+		layers[0].trainLayer(de_dt, x);
 		return mse;
 	}
 
@@ -155,7 +161,6 @@ int main() {
 	MyNetwork network;
 	vector<int> amount = {4, 3, 5, 2};
 	network.makeLayers(amount);
-
 	int examples = 20;
 	vector<double> inps[] = {{5.1, 3.5, 1.4, 0.2},
 	                         {5.1, 3.5, 1.4, 0.2},
@@ -229,3 +234,4 @@ int main() {
 	cout << network.predict(inps[2])[0] << " " << network.predict(inps[2])[1] << endl;
 	cout << network.predict(inps[3])[0] << " " << network.predict(inps[3])[1] << endl;
 }
+
