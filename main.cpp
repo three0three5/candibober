@@ -9,7 +9,7 @@
 const double WEIGHTS_UPPER_BOUND = -2;
 const double WEIGHTS_LOWER_BOUND = 2;
 const double BIAS_UPPER_BOUND = -2;
-const double BIAS_LOWER_BOUND = 1;
+const double BIAS_LOWER_BOUND = 2;
 
 using namespace std;
 
@@ -67,14 +67,14 @@ public:
 		return y;
 	}
 
-	vector<double> trainLayer(vector<double> de_dh) {
+	vector<double> trainLayer(vector<double> de_dh, vector<double> prev_values) {
 		for (int i = 0; i < num_of_neurons; i++) {
-			double lr = -0.1;
+			double lr = -0.01;
 			double de_dbi = de_dh[i]*df(neurons[i].prev_value);
-			neurons[i].bias += 0.5*lr*de_dbi;
+			neurons[i].bias += lr*de_dbi;
 			double de_dw;
 			for (int j = 0; j < num_of_axons; j++) {
-				de_dw = de_dh[i]*df(neurons[i].prev_value)*neurons[i].weights[j];
+				de_dw = de_dh[i]*df(neurons[i].prev_value)*actFunc(prev_values[j]);
 				neurons[i].weights[j] += lr*de_dw;
 			}
 		}
@@ -119,9 +119,9 @@ public:
 		return y;
 	}
 
-	double fit(vector<double> x, vector<double> y) {
+	double fit(const vector<double>& x, vector<double> y) {
 		int size_of_ans = (int) y.size();
-		vector<double> y_pred = predict(move(x));
+		vector<double> y_pred = predict(x);
 		double mse = 0;
 		for (int i = 0; i < size_of_ans; i++) {
 			mse += (y_pred[i] - y[i])*(y_pred[i] - y[i]);
@@ -132,9 +132,15 @@ public:
 		for (int i = 0; i < size_of_ans; i++) {
 			de_dt[i] = 2*(y_pred[i] - y[i])/(double) size_of_ans;
 		}
-		for (int i = num_of_layers - 1; i >= 0; i--) {
-			de_dt = layers[i].trainLayer(de_dt);
+		vector<double> prev_values(x.size());
+		for (int i = num_of_layers - 1; i > 0; i--) {
+			int prev_size = layers[i].num_of_axons;
+			for(int j = 0; j < prev_size; j++){
+				prev_values[j] = layers[i-1].neurons[j].prev_value;
+			}
+			de_dt = layers[i].trainLayer(de_dt, prev_values);
 		}
+		layers[0].trainLayer(de_dt, x);
 		return mse;
 	}
 
@@ -157,20 +163,21 @@ int main() {
 	network.makeLayers(amount);
 
 	int examples = 4;
-	vector<double> inps[] = {{0, 0},
-	                         {0, 1},
-	                         {1, 0},
-	                         {1, 1}};
+	vector<double> inps[] = {{0,0},
+	                         {0,1},
+	                         {1,0},
+	                         {1,1}
+	};
 	vector<double> answs[] = {{0},
 	                          {1},
 	                          {1},
 	                          {0}};
-
+	double permissible_mse = 0.01;
 	for (int i = 0; i < 250; i++) {
 		double mse = 10;
 		int j = 0;
 		network.shuffle();
-		while (mse > 0.01 && j < 100) {
+		while (mse > permissible_mse && j < 100) {
 			mse = 0;
 			for (int k = 0; k < examples*10; k++) {
 				mse += network.fit(inps[k%examples], answs[k%examples]);
@@ -179,12 +186,14 @@ int main() {
 			j++;
 		}
 		cout << "\nMSE: " << mse;
-		if (mse <= 0.01) {
+		if (mse <= permissible_mse) {
+			cout<<"\nSuccess!\n";
 			break;
 		}
 	}
-	cout << "\nPredictions: " << network.predict(inps[0])[0] << " "
-	     << network.predict(inps[1])[0] << " "
-	     << network.predict(inps[2])[0] << " "
-	     << network.predict(inps[3])[0] << " ";
+
+	cout << "\nPredictions: \n" << network.predict(inps[0])[0] << " ";
+	cout << network.predict(inps[1])[0] << " ";
+	cout << network.predict(inps[2])[0] << " ";
+	cout << network.predict(inps[3])[0] << " ";
 }
