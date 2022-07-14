@@ -2,6 +2,7 @@
 #include <vector>
 #include <cmath>
 #include <random>
+#include <windows.h>
 
 const double WEIGHTS_UPPER_BOUND = -5;
 const double WEIGHTS_LOWER_BOUND = 5;
@@ -18,11 +19,11 @@ double randdouble(double lower_bound, double upper_bound) {
 }
 
 static double actFunc(double x) {
-	return 1/(1 + exp(-10*(x - 0.5)));
+	return 1/(1 + exp(-x));
 }
 
 static double df(double x) {
-	return actFunc(x)*(1 - actFunc(x))*10;
+	return actFunc(x)*(1 - actFunc(x));
 }
 
 class Neuron {
@@ -169,6 +170,7 @@ int main() {
 	double permissible_mse = 0.03;
 	for (int i = 0; i < 25; i++) {
 		double mse = 10;
+		double prev_mse = 20;
 		int j = 0;
 		network.shuffle();
 		while (mse > permissible_mse && j < 500) {
@@ -177,6 +179,11 @@ int main() {
 				mse += network.fit(inps[k%examples], answs[k%examples]);
 			}
 			mse /= 10*examples;
+			if(prev_mse - mse <= 1e-14){
+				break;
+			}
+			prev_mse = mse;
+			cout<<"\nMSE: "<<mse;
 			j++;
 		}
 		cout << "\nMSE: " << mse;
