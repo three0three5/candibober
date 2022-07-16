@@ -2,7 +2,6 @@
 #include <vector>
 #include <cmath>
 #include <random>
-#include <windows.h>
 
 const double WEIGHTS_UPPER_BOUND = -5;
 const double WEIGHTS_LOWER_BOUND = 5;
@@ -171,9 +170,8 @@ int main() {
 	for (int i = 0; i < 25; i++) {
 		double mse = 10;
 		double prev_mse = 20;
-		int j = 0;
 		network.shuffle();
-		while (mse > permissible_mse && j < 500) {
+		while (mse > permissible_mse) {
 			mse = 0;
 			for (int k = 0; k < examples*10; k++) {
 				mse += network.fit(inps[k%examples], answs[k%examples]);
@@ -184,7 +182,6 @@ int main() {
 			}
 			prev_mse = mse;
 			cout<<"\nMSE: "<<mse;
-			j++;
 		}
 		cout << "\nMSE: " << mse;
 		if (mse <= permissible_mse) {
